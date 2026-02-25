@@ -4,135 +4,763 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyReady - Weather Decisions Made Simple</title>
+    <meta name="description" content="Instant, actionable weather recommendations. No data overload — just quick answers.">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-top: #FFD966;
+            --bg-bottom: #FFB399;
+            --text: #333333;
+            --accent: #FF8B5E;
+            --metadata: #666666;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #1a1a2e;
-            background: linear-gradient(135deg, #e8f4fd 0%, #f0f4ff 50%, #fafbff 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            background: #1a1a2e;
+        }
+
+        /* ── Hero: Full-viewport app experience ── */
+        .hero {
+            position: relative;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-        }
-        .container {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 60px 24px 40px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .icon {
-            width: 120px;
-            height: 120px;
-            border-radius: 28px;
-            background: linear-gradient(145deg, #4a90d9, #357abd);
-            display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(74, 144, 217, 0.3);
+            text-align: center;
+            overflow: hidden;
+            transition: background 1.8s ease;
         }
-        .icon svg { width: 64px; height: 64px; fill: white; }
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
+
+        .hero-gradient {
+            position: absolute;
+            inset: 0;
+            transition: opacity 1.8s ease;
+            z-index: 0;
         }
-        .tagline {
-            font-size: 1.1rem;
-            color: #5a6a7a;
-            margin-bottom: 32px;
+
+        #weather-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
         }
-        .description {
-            font-size: 1rem;
-            line-height: 1.6;
-            color: #4a5568;
-            margin-bottom: 40px;
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 0 24px;
             max-width: 480px;
         }
-        .links {
+
+        .weather-icon {
+            font-size: 96px;
+            line-height: 1;
+            margin-bottom: 32px;
+            transition: opacity 0.6s ease;
+            filter: drop-shadow(0 4px 24px rgba(0,0,0,0.1));
+        }
+
+        @media (min-width: 768px) {
+            .weather-icon { font-size: 120px; }
+        }
+
+        .recommendation {
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            transition: color 1.8s ease, opacity 0.6s ease;
+            color: var(--text);
+        }
+
+        .temperature {
+            font-size: 44px;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            transition: color 1.8s ease, opacity 0.6s ease;
+            color: var(--text);
+        }
+
+        .feels-like {
+            font-size: 16px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 6px;
+            vertical-align: middle;
+            transition: color 1.8s ease;
+            color: var(--accent);
+        }
+
+        .supporting-text {
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 28px;
+            transition: color 1.8s ease, opacity 0.6s ease;
+            color: var(--accent);
+        }
+
+        /* Recommendation cards */
+        .cards {
             display: flex;
             flex-direction: column;
             gap: 12px;
             width: 100%;
-            max-width: 320px;
-            margin-bottom: 48px;
+            margin-bottom: 28px;
         }
+
+        .card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 18px 20px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            text-align: left;
+            transition: background 1.8s ease, border-color 1.8s ease, opacity 0.6s ease;
+        }
+
+        .card-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .card-text h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 3px;
+            transition: color 1.8s ease;
+            color: var(--text);
+        }
+
+        .card-text p {
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.4;
+            transition: color 1.8s ease;
+            color: var(--metadata);
+        }
+
+        /* Pill buttons (like the app's capsule buttons) */
+        .pills {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: default;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            transition: background 1.8s ease;
+        }
+
+        /* Location + updated metadata */
+        .metadata {
+            font-size: 12px;
+            font-weight: 400;
+            transition: color 1.8s ease;
+            color: var(--metadata);
+            opacity: 0.8;
+        }
+
+        /* Scroll indicator */
+        .scroll-hint {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            animation: bounce 2s infinite;
+            color: var(--text);
+            opacity: 0.5;
+            font-size: 24px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Condition dots */
+        .condition-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 16px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text);
+            opacity: 0.3;
+            transition: opacity 0.4s ease, transform 0.4s ease, background 1.8s ease;
+        }
+
+        .dot.active {
+            opacity: 0.9;
+            transform: scale(1.4);
+        }
+
+        /* ── Info section below hero ── */
+        .info {
+            background: #fafbff;
+            padding: 64px 24px 48px;
+            text-align: center;
+        }
+
+        .info-inner {
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .info h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .info p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #4a5568;
+            margin-bottom: 32px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        @media (max-width: 480px) {
+            .features { grid-template-columns: 1fr; }
+        }
+
+        .feature {
+            padding: 20px;
+            border-radius: 16px;
+            background: white;
+            border: 1px solid #e8ecf2;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: #5a6a7a;
+            margin-bottom: 0;
+            line-height: 1.4;
+        }
+
+        .links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
         .links a {
-            display: block;
-            padding: 14px 20px;
+            padding: 12px 24px;
             border-radius: 12px;
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.95rem;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .links a:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        .link-primary {
-            background: #357abd;
-            color: white;
-        }
-        .link-secondary {
+            font-size: 0.9rem;
             background: white;
             color: #357abd;
             border: 1px solid #d0dce8;
+            transition: transform 0.15s, box-shadow 0.15s;
         }
+
+        .links a:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
         .support {
-            margin-top: auto;
-            padding: 24px;
-            text-align: center;
-        }
-        .support p {
             font-size: 0.9rem;
             color: #5a6a7a;
-            margin-bottom: 4px;
         }
+
         .support a {
             color: #357abd;
             text-decoration: none;
             font-weight: 500;
         }
+
         .support a:hover { text-decoration: underline; }
+
         footer {
             text-align: center;
-            padding: 20px;
+            padding: 24px;
             font-size: 0.8rem;
             color: #8a9ab0;
+            background: #fafbff;
+        }
+
+        /* Lightning flash overlay */
+        .lightning-flash {
+            position: absolute;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
+            transition: opacity 0.08s ease;
+        }
+
+        .lightning-flash.active {
+            opacity: 0.35;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
+
+    <!-- HERO: The app experience -->
+    <section class="hero" id="hero">
+        <div class="hero-gradient" id="hero-gradient"></div>
+        <canvas id="weather-canvas"></canvas>
+        <div class="lightning-flash" id="lightning-flash"></div>
+
+        <div class="hero-content">
+            <div class="weather-icon" id="weather-icon">☀️</div>
+
+            <div class="recommendation" id="recommendation">Perfect day — no layers needed</div>
+
+            <div>
+                <span class="temperature" id="temperature">22°</span>
+                <span class="feels-like" id="feels-like">Feels 24°</span>
+            </div>
+
+            <div class="supporting-text" id="supporting-text">Clear skies all afternoon</div>
+
+            <div class="cards" id="cards">
+                <div class="card">
+                    <span class="card-icon">👕</span>
+                    <div class="card-text">
+                        <h3 id="card1-title">Light clothing</h3>
+                        <p id="card1-detail">T-shirt weather — enjoy the warmth</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <span class="card-icon" id="card2-icon">😎</span>
+                    <div class="card-text">
+                        <h3 id="card2-title">Sunglasses</h3>
+                        <p id="card2-detail">UV index is moderate today</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="condition-dots" id="condition-dots"></div>
+
+            <div class="metadata" id="metadata">📍 London &middot; Updated just now</div>
         </div>
-        <h1>SkyReady</h1>
-        <p class="tagline">Weather decisions made simple</p>
-        <p class="description">
-            SkyReady gives you instant, actionable weather recommendations.
-            No data overload &mdash; just quick answers: should you bring an umbrella?
-            Do you need a jacket? Open the app and know in seconds.
-        </p>
-        <div class="links">
-            <a href="/privacy" class="link-secondary">Privacy Policy</a>
-            <a href="/terms" class="link-secondary">Terms of Service</a>
+
+        <div class="scroll-hint" id="scroll-hint">&#8964;</div>
+    </section>
+
+    <!-- INFO: About the app -->
+    <section class="info">
+        <div class="info-inner">
+            <h2>Weather decisions made simple</h2>
+            <p>
+                SkyReady gives you instant, actionable weather recommendations.
+                No data overload — just quick answers: should you bring an umbrella?
+                Do you need a jacket? Open the app and know in seconds.
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🌡️</div>
+                    <h3>Smart Recommendations</h3>
+                    <p>Clothing and accessory advice based on real conditions</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Morning Briefings</h3>
+                    <p>Daily notification with your weather summary</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Dynamic Themes</h3>
+                    <p>Colours and animations that match the weather</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Privacy First</h3>
+                    <p>Your data stays on your device</p>
+                </div>
+            </div>
+
+            <div class="links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+            </div>
+
+            <div class="support">
+                Need help? <a href="mailto:mail@skyready.site">mail@skyready.site</a>
+            </div>
         </div>
-        <div class="support">
-            <p>Need help? Contact us:</p>
-            <a href="mailto:mail@skyready.site">mail@skyready.site</a>
-        </div>
-    </div>
+    </section>
+
     <footer>
         &copy; 2026 Tim Dalton Software. All rights reserved.
     </footer>
+
+<script>
+// ── Weather Conditions ──
+const conditions = [
+    {
+        name: 'sunny',
+        icon: '☀️',
+        recommendation: 'Perfect day — no layers needed',
+        temp: '22°', feelsLike: 'Feels 24°',
+        supporting: 'Clear skies all afternoon',
+        card1: { icon: '👕', title: 'Light clothing', detail: 'T-shirt weather — enjoy the warmth' },
+        card2: { icon: '😎', title: 'Sunglasses', detail: 'UV index is moderate today' },
+        bgTop: '#FFD966', bgBottom: '#FFB399',
+        text: '#333333', accent: '#FF8B5E', metadata: '#666666',
+        cardBg: 'rgba(255,139,94,0.08)', cardBorder: 'rgba(255,139,94,0.2)'
+    },
+    {
+        name: 'rain',
+        icon: '🌧️',
+        recommendation: 'Grab your umbrella today',
+        temp: '14°', feelsLike: 'Feels 12°',
+        supporting: 'Rain expected through the evening',
+        card1: { icon: '☂️', title: 'Umbrella essential', detail: 'Showers on and off until 8 PM' },
+        card2: { icon: '🧥', title: 'Waterproof jacket', detail: 'Keep a layer handy for the wind' },
+        bgTop: '#7B9FE0', bgBottom: '#9FC5E8',
+        text: '#FFFFFF', accent: '#E8F4FF', metadata: '#D0E8F5',
+        cardBg: 'rgba(255,255,255,0.10)', cardBorder: 'rgba(255,255,255,0.20)'
+    },
+    {
+        name: 'snow',
+        icon: '🌨️',
+        recommendation: 'Bundle up — it\'s snowing',
+        temp: '1°', feelsLike: 'Feels -2°',
+        supporting: 'Snow showers through the morning',
+        card1: { icon: '🧣', title: 'Warm layers', detail: 'Hat, scarf, and gloves recommended' },
+        card2: { icon: '🥾', title: 'Waterproof boots', detail: 'Watch for slippery pavements' },
+        bgTop: '#66B3FF', bgBottom: '#85D5FF',
+        text: '#FFFFFF', accent: '#E8F4FF', metadata: '#D0E0F0',
+        cardBg: 'rgba(255,255,255,0.10)', cardBorder: 'rgba(255,255,255,0.20)'
+    },
+    {
+        name: 'thunderstorm',
+        icon: '⛈️',
+        recommendation: 'Thunderstorms — stay indoors if you can',
+        temp: '18°', feelsLike: 'Feels 16°',
+        supporting: 'Heavy rain and lightning until evening',
+        card1: { icon: '☂️', title: 'Umbrella essential', detail: 'Downpours with possible hail' },
+        card2: { icon: '🏠', title: 'Stay sheltered', detail: 'Avoid open areas during lightning' },
+        bgTop: '#5B6FD8', bgBottom: '#7B8FE8',
+        text: '#FFFFFF', accent: '#C8D8FF', metadata: '#A8B8E0',
+        cardBg: 'rgba(255,255,255,0.08)', cardBorder: 'rgba(255,255,255,0.15)'
+    },
+    {
+        name: 'cloudy',
+        icon: '☁️',
+        recommendation: 'Overcast but dry — light layers',
+        temp: '16°', feelsLike: 'Feels 15°',
+        supporting: 'Cloud cover clearing by evening',
+        card1: { icon: '🧥', title: 'Light jacket', detail: 'A jumper will do for today' },
+        card2: { icon: '👟', title: 'Any footwear', detail: 'No rain expected — you\'re safe' },
+        bgTop: '#A3C4F3', bgBottom: '#C4B5FD',
+        text: '#333333', accent: '#7B8FD8', metadata: '#666666',
+        cardBg: 'rgba(123,143,216,0.08)', cardBorder: 'rgba(123,143,216,0.2)'
+    },
+    {
+        name: 'windy',
+        icon: '💨',
+        recommendation: 'Hold onto your hat — it\'s breezy',
+        temp: '13°', feelsLike: 'Feels 9°',
+        supporting: 'Gusts up to 40 mph this afternoon',
+        card1: { icon: '🧥', title: 'Windproof layer', detail: 'A sturdy jacket will cut the chill' },
+        card2: { icon: '🎒', title: 'Secure loose items', detail: 'Keep bags zipped and close' },
+        bgTop: '#8BB8D8', bgBottom: '#A8D0E8',
+        text: '#FFFFFF', accent: '#D8F0FF', metadata: '#C0D8E8',
+        cardBg: 'rgba(255,255,255,0.10)', cardBorder: 'rgba(255,255,255,0.20)'
+    }
+];
+
+let currentIndex = 0;
+const hero = document.getElementById('hero');
+const gradient = document.getElementById('hero-gradient');
+const canvas = document.getElementById('weather-canvas');
+const ctx = canvas.getContext('2d');
+const flash = document.getElementById('lightning-flash');
+
+// ── Resize canvas ──
+function resize() {
+    canvas.width = hero.offsetWidth * devicePixelRatio;
+    canvas.height = hero.offsetHeight * devicePixelRatio;
+    canvas.style.width = hero.offsetWidth + 'px';
+    canvas.style.height = hero.offsetHeight + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── Build condition dots ──
+const dotsContainer = document.getElementById('condition-dots');
+conditions.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dotsContainer.appendChild(dot);
+});
+
+// ── Particles (pre-generated) ──
+const rainDrops = Array.from({length: 50}, () => ({
+    x: Math.random(), speed: 0.8 + Math.random() * 0.7, phase: Math.random()
+}));
+
+const snowFlakes = Array.from({length: 35}, () => ({
+    x: Math.random(), speed: 5 + Math.random() * 5, phase: Math.random(),
+    size: 3 + Math.random() * 5, swayAmp: 15 + Math.random() * 25
+}));
+
+const sparkles = Array.from({length: 18}, () => ({
+    x: 0.05 + Math.random() * 0.9, speed: 4 + Math.random() * 3,
+    phase: Math.random(), size: 7 + Math.random() * 5, opacity: 0.3 + Math.random() * 0.4
+}));
+
+const clouds = Array.from({length: 8}, () => ({
+    y: 0.05 + Math.random() * 0.5, speed: 20 + Math.random() * 15,
+    phase: Math.random(), width: 80 + Math.random() * 80, opacity: 0.08 + Math.random() * 0.12
+}));
+
+const windStreaks = Array.from({length: 22}, () => ({
+    y: 0.05 + Math.random() * 0.9, speed: 1.5 + Math.random() * 1.5,
+    phase: Math.random(), length: 40 + Math.random() * 80, opacity: 0.08 + Math.random() * 0.1
+}));
+
+const stormDrops = Array.from({length: 65}, () => ({
+    x: Math.random(), speed: 0.5 + Math.random() * 0.5, phase: Math.random()
+}));
+
+// ── Animation loop ──
+let animStart = performance.now();
+
+function drawWeather(timestamp) {
+    const t = (timestamp - animStart) / 1000;
+    const w = hero.offsetWidth;
+    const h = hero.offsetHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const cond = conditions[currentIndex].name;
+
+    if (cond === 'sunny') {
+        // Yellow diamond sparkles
+        for (const p of sparkles) {
+            const progress = ((t / p.speed) + p.phase) % 1;
+            const y = h * (1 - progress) + 30;
+            const x = p.x * w;
+            const pulse = p.opacity * (0.5 + 0.5 * Math.sin(t * 2 + p.phase * Math.PI * 2));
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            const hs = p.size / 2;
+            ctx.moveTo(x, y - hs);
+            ctx.lineTo(x + hs * 0.4, y);
+            ctx.lineTo(x, y + hs);
+            ctx.lineTo(x - hs * 0.4, y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    if (cond === 'rain') {
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = '#67D8EF';
+        for (const d of rainDrops) {
+            const progress = ((t / d.speed) + d.phase) % 1;
+            const y = progress * (h + 40) - 20;
+            const x = d.x * w;
+            ctx.fillRect(x - 1, y - 10, 2, 20);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    if (cond === 'snow') {
+        for (const f of snowFlakes) {
+            const progress = ((t / f.speed) + f.phase) % 1;
+            const y = progress * (h + 60) - 30;
+            const sway = f.swayAmp * Math.sin(t * 0.8 + f.phase * Math.PI * 2);
+            const x = f.x * w + sway;
+            ctx.save();
+            ctx.globalAlpha = 0.75;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(x, y, f.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    if (cond === 'thunderstorm') {
+        ctx.globalAlpha = 0.65;
+        ctx.fillStyle = '#67D8EF';
+        for (const d of stormDrops) {
+            const progress = ((t / d.speed) + d.phase) % 1;
+            const y = progress * (h + 50) - 25;
+            const x = d.x * w;
+            ctx.fillRect(x - 1.5, y - 12.5, 3, 25);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    if (cond === 'cloudy') {
+        for (const c of clouds) {
+            const progress = ((t / c.speed) + c.phase) % 1;
+            const x = w * (1.2 - progress * 1.4);
+            const y = c.y * h;
+            const cw = c.width;
+            const ch = cw * 0.4;
+            ctx.save();
+            ctx.globalAlpha = c.opacity;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.roundRect(x - cw/2, y - ch/2, cw, ch, ch/2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    if (cond === 'windy') {
+        for (const s of windStreaks) {
+            const progress = ((t / s.speed) + s.phase) % 1;
+            const x = w * (1.3 - progress * 1.6);
+            const y = s.y * h + 5 * Math.sin(t * 3 + s.phase * Math.PI * 2);
+            ctx.save();
+            ctx.globalAlpha = s.opacity;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.roundRect(x - s.length/2, y - 1, s.length, 2, 1);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    requestAnimationFrame(drawWeather);
+}
+requestAnimationFrame(drawWeather);
+
+// ── Lightning for thunderstorm ──
+let lightningTimeout;
+function lightningCycle() {
+    if (conditions[currentIndex].name !== 'thunderstorm') {
+        lightningTimeout = setTimeout(lightningCycle, 500);
+        return;
+    }
+    const delay = 2000 + Math.random() * 5000;
+    lightningTimeout = setTimeout(() => {
+        flash.classList.add('active');
+        setTimeout(() => flash.classList.remove('active'), 120);
+        lightningCycle();
+    }, delay);
+}
+lightningCycle();
+
+// ── Transition conditions ──
+function switchCondition(index) {
+    const c = conditions[index];
+    currentIndex = index;
+
+    // Gradient
+    gradient.style.background = `linear-gradient(to bottom, ${c.bgTop}, ${c.bgBottom})`;
+
+    // CSS variables for text colors
+    const root = document.documentElement;
+    root.style.setProperty('--text', c.text);
+    root.style.setProperty('--accent', c.accent);
+    root.style.setProperty('--metadata', c.metadata);
+
+    // Content
+    document.getElementById('weather-icon').textContent = c.icon;
+    document.getElementById('recommendation').textContent = c.recommendation;
+    document.getElementById('temperature').textContent = c.temp;
+    document.getElementById('feels-like').textContent = c.feelsLike;
+    document.getElementById('supporting-text').textContent = c.supporting;
+    document.getElementById('card1-title').textContent = c.card1.title;
+    document.getElementById('card1-detail').textContent = c.card1.detail;
+    document.getElementById('card2-icon').textContent = c.card2.icon;
+    document.getElementById('card2-title').textContent = c.card2.title;
+    document.getElementById('card2-detail').textContent = c.card2.detail;
+
+    // Card styling
+    document.querySelectorAll('.card').forEach(card => {
+        card.style.background = c.cardBg;
+        card.style.borderColor = c.cardBorder;
+    });
+
+    // Dots
+    document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+
+// Initial state
+switchCondition(0);
+
+// Auto-cycle every 7 seconds
+setInterval(() => {
+    const next = (currentIndex + 1) % conditions.length;
+    switchCondition(next);
+}, 7000);
+
+// ── Hide scroll hint on scroll ──
+window.addEventListener('scroll', () => {
+    const hint = document.getElementById('scroll-hint');
+    if (window.scrollY > 50) hint.style.opacity = '0';
+    else hint.style.opacity = '0.5';
+}, { passive: true });
+</script>
+
 </body>
 </html>
