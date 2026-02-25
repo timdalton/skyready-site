@@ -25,8 +25,8 @@
         /* ── Hero: Full-viewport app experience ── */
         .hero {
             position: relative;
-            min-height: 100vh;
-            min-height: 100dvh;
+            min-height: 70vh;
+            min-height: 70dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -60,15 +60,15 @@
         }
 
         .weather-icon {
-            font-size: 96px;
+            font-size: 80px;
             line-height: 1;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
             transition: opacity 0.6s ease;
             filter: drop-shadow(0 4px 24px rgba(0,0,0,0.1));
         }
 
         @media (min-width: 768px) {
-            .weather-icon { font-size: 120px; }
+            .weather-icon { font-size: 96px; }
         }
 
         .recommendation {
@@ -104,7 +104,7 @@
         .supporting-text {
             font-size: 1rem;
             font-weight: 400;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
             transition: color 1.8s ease, opacity 0.6s ease;
             color: var(--accent);
         }
@@ -113,16 +113,16 @@
         .cards {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
         }
 
         .card {
             display: flex;
             align-items: flex-start;
             gap: 14px;
-            padding: 18px 20px;
+            padding: 14px 18px;
             border-radius: 16px;
             background: rgba(255,255,255,0.12);
             border: 1px solid rgba(255,255,255,0.2);
@@ -160,7 +160,7 @@
             gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
         }
 
         .pill {
@@ -187,24 +187,6 @@
             transition: color 1.8s ease;
             color: var(--metadata);
             opacity: 0.8;
-        }
-
-        /* Scroll indicator */
-        .scroll-hint {
-            position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-            animation: bounce 2s infinite;
-            color: var(--text);
-            opacity: 0.5;
-            font-size: 24px;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(8px); }
         }
 
         /* Condition dots */
@@ -399,7 +381,6 @@
             <div class="metadata" id="metadata">📍 London &middot; Updated just now</div>
         </div>
 
-        <div class="scroll-hint" id="scroll-hint">&#8964;</div>
     </section>
 
     <!-- INFO: About the app -->
@@ -434,6 +415,11 @@
                     <p>Your data stays on your device</p>
                 </div>
             </div>
+
+            <!-- TODO: Add App Store link once app is live -->
+            <!-- <a href="https://apps.apple.com/app/skyready/id_HERE" class="app-store-link">
+                <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="44">
+            </a> -->
 
             <div class="links">
                 <a href="/privacy">Privacy Policy</a>
@@ -748,18 +734,12 @@ function switchCondition(index) {
 // Initial state
 switchCondition(0);
 
-// Auto-cycle every 7 seconds
+// Auto-cycle every 4 seconds
 setInterval(() => {
     const next = (currentIndex + 1) % conditions.length;
     switchCondition(next);
-}, 7000);
+}, 4000);
 
-// ── Hide scroll hint on scroll ──
-window.addEventListener('scroll', () => {
-    const hint = document.getElementById('scroll-hint');
-    if (window.scrollY > 50) hint.style.opacity = '0';
-    else hint.style.opacity = '0.5';
-}, { passive: true });
 </script>
 
 </body>
